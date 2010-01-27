@@ -1,0 +1,23 @@
+div.tabs{
+	display:none;
+}
+
+#block-ludwig-1 .date{
+	margin-left:1em;
+}
+
+#block-block-2{
+	margin-top:2em;
+}
+
+.first-row{
+ text-align:right; width:237px;  overflow:hidden;
+}
+
+.second-row{
+	padding-left:10px; width:482px;
+}
+
+.third-row{
+	padding-left:10px; 
+}

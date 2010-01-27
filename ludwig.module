@@ -1,0 +1,220 @@
+<?php
+
+/* Author: Benjamin Birkenhake <benjamin@birkenhake.org> */
+
+//At first, add some sensibel Information to the header
+
+ludwig_extended_head();
+
+
+/**
+ * A Function to add extendend information to the head.
+ *
+ */
+function ludwig_extended_head(){
+	drupal_set_html_head('  <meta name="Generator" content="Drupal 6"/>');
+	drupal_set_html_head('  <meta http-equiv="content-language" content="de" />');
+	drupal_set_html_head('  <!-- Get rid of those f*ckin Bots -->');
+	drupal_set_html_head('  <meta name="robots" content="noindex, nofollow" />');
+	drupal_set_html_head('  <meta name="googlebot" content="noindex, nofollow" />');
+	drupal_set_html_head('  <meta name="robots" content="noimageindex" />');
+	drupal_set_html_head('  <meta name="description" content="'.variable_get("site_name", "Sites Name").' | '.variable_get("site_slogan", "Slogan").'" />');
+	if(arg(0)=="node" and arg(1)==""){
+		drupal_set_html_head('  <meta name="keywords" content="'.variable_get("site_mission", "Sites Mission").'" />');
+	}
+}
+
+
+/**
+ * Add additional Blocks containing a) the tabs b) the date of a node
+ *
+ * @param unknown_type $op
+ * @param unknown_type $delta
+ * @return unknown
+ */
+function ludwig_block($op = 'list', $delta = 0){
+	global $tabs;
+
+	//drupal_set_message("Register Globals".ini_get("register_globals"));
+	if ($op == 'list') {
+		$blocks[0]['info'] = t('Ludwig: Tabs');
+		if(module_exists("archive")){
+			$blocks[1]['info'] = t('Ludwig: Date');
+		}
+		$blocks[2]['info'] = t('Ludwig: Ex Machina');
+		return $blocks;
+	}
+	else if ($op == 'view') {
+		switch ($delta){
+			case 0:
+				drupal_add_css(drupal_get_path('module', 'ludwig') .'/ludwig.css');
+				$output = ludwig_tabs_block();
+				if($output){
+					$block['subject'] = t('Tabs');
+					$block['content'] .= $output;
+				}else{
+					$output = NULL;
+				}
+				break;
+			case 1:
+				drupal_add_css(drupal_get_path('module', 'ludwig') .'/ludwig.css');
+				if(module_exists("archive") and arg(0)=="node" and arg(1)!=""){
+					$node = node_load(arg(1));
+					$day = l(date("j.", $node->created), "archive/all/".date("Y/n/j", $node->created));
+					$month = l(t(date("F", $node->created)), "archive/all/".date("Y/n", $node->created) );
+					$year = l(date("Y", $node->created), "archive/all/".date("Y", $node->created) );
+					$output = "<p class='date'>".$day." ".$month." ".$year."</p>";
+				}else{
+					$output = NULL;
+				}
+				$block['subject'] = t('Date');
+				$block['content'] .= $output;
+				break;
+			case 2:
+				$file = fopen("http://www.google.com/reader/public/atom/user/10020190705343921498/state/com.google/broadcast", "r");
+				while($line = fgets($file)){
+					$string .= $line;
+				}
+				$xml = simplexml_load_string($string);
+				$output = "<table>";
+				foreach ($xml->entry as $entry){
+					$output .= '<tr><td class="first-row" style="">';
+					$output .= substr(strtolower($entry->source->title), 0,25);
+					if(strlen($entry->source->title)>25){
+						$output .= " …";
+					}
+					$output .= '</td><td class="second-row">';
+					$output .= '<a href="'.$entry->link["href"].'">'.substr(strtolower($entry->title),0,58);
+					if(strlen($entry->title)>58){
+						$output .= " …";
+					}
+					$output .= "</a>";
+					$output .= '</td></tr>';
+				}
+				$output .= "</table>";
+				$block['subject'] = t('ex machina');
+				$block['content'] .= $output;
+				break;
+		}
+		return $block;
+	}
+
+
+}
+
+/**
+ * Generate the block for the tabs.
+ *
+ * @return unknown
+ */
+function ludwig_tabs_block(){
+	$output = '';
+
+	if ($primary = menu_primary_local_tasks()) {
+		$output .= "<ul class=\"\">\n". $primary ."</ul>\n";
+	}
+	if ($secondary = menu_secondary_local_tasks()) {
+		$output .= "<ul class=\"\">\n". $secondary ."</ul>\n";
+	}
+	if($output==''){
+		$output = NULL;
+	}else{
+		$output = "<div id='mytabs' class='item-list'>".$output."</div>";
+	}
+
+	return $output;
+
+}
+
+
+
+/**
+ * Function to improve several Aspects of Nodes
+ * 
+ * 1. If there is no teaser get the first part of the node.
+ * 2. Remove the f*ckin' <!--break--> from the RSS Feed
+ *
+ * @param object $node
+ * @param string $op
+ * @param int $arg
+ */
+function ludwig_nodeapi($node, $op, $arg = 0){
+	switch ($op) {
+
+		case "view":			
+			//dprint_r($node);
+			if($node->content["body"]["#value"] == ""){
+				$node->content["body"]["#value"] = substr(nl2br(strip_tags($node->body, "<br><img>")), 0, variable_get('teaser_length', 600));
+				return $node;
+			}
+			break;
+
+		case "rss item":
+			$node->body = ereg_replace("&lt;!--break-->", " ", $node->body);
+			$node->body = ereg_replace("<img ", "<img width='300' ", $node->body);
+			break;
+	}
+}
+
+/**
+ * Improve several Forms
+ * 
+ * 1. Improve the Elements of the Node form
+ * 2. Add a login hint to unloggedin Users
+ *
+ * @param unknown_type $form
+ * @param unknown_type $form_state
+ * @param unknown_type $form_id
+ * @return unknown
+ */
+function ludwig_form_alter(&$form, $form_state, $form_id){
+	//print $form_id;
+	
+	//dprint_r($form);
+	
+	global $user;
+
+	//Improve Node Form
+	if (strpos($form_id, '_node_form')) {
+		
+		// Change Collapse States
+		
+		$form["author"]["#collapsed"] 						= FALSE;
+		$form["options"]["#collapsed"] 						= FALSE;
+		$form["attachments"]["#collapsed"] 					= FALSE;
+		$form["path"]["#collapsed"] 						= TRUE;
+		
+		// Change Weight
+		
+		$form["taxonomy"]["#weight"] 						= "10";
+		$form["path"]["#weight"] 							= "20";
+		$form["teaserimage"]["#weight"] 					= "30";
+		$form["attachments"]["#weight"] 					= "40";
+		
+		
+		$form["feedimporter"]["#weight"] 					= "50";
+		$form["menu"]["#weight"] 							= "60";
+		$form["comment_settings"]["#weight"] 				= "70";		
+		$form["revision_information"]["#weight"] 			= "80";
+		
+		// Add a wrapper to the node buttons
+	
+		$form['buttons']["#prefix"]="<div class='thebuttons'>";
+		$form['buttons']["#suffix"]="</div>";
+		
+		
+		
+				
+	}else{
+		switch($form_id){
+			
+			// Improve Comment Form
+			case "comment_form":
+				if($user->uid=="0" ){
+					$form["name"]["#description"] = "<p><a href='/user/login?destination=node/".$form['nid']['#value']."'>".t("You may want to login?")."</a></p>";
+				}
+				break;	
+		}
+	}
+	return $form;
+}

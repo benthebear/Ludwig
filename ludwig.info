@@ -1,0 +1,9 @@
+; $Id:  $
+name = Ludwig
+description = A Module assisting the Theme Mies
+package = Other
+version = VERSION
+core = 6.x
+
+
+
