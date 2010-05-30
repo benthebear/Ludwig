@@ -137,9 +137,9 @@ function ludwig_nodeapi($node, $op, $arg = 0){
 			drupal_set_html_head('  <meta name="node-id" content="'.$node->nid.'" />');
 			drupal_set_html_head('  <meta name="node-type" content="'.$node->type.'" />');
 			drupal_set_html_head('  <meta name="created-timestamp" content="'.$node->created.'" />');
-			drupal_set_html_head('  <meta name="created-string" content="'.date("d. m. Y - h:i", $node->created).'" />');
+			drupal_set_html_head('  <meta name="created-string" content="'.date("d. m. Y - H:i", $node->created).'" />');
 			drupal_set_html_head('  <meta name="changed-timestamp" content="'.$node->changed.'" />');
-			drupal_set_html_head('  <meta name="changed-string" content="'.date("d. m. Y - h:i", $node->changed).'" />');
+			drupal_set_html_head('  <meta name="changed-string" content="'.date("d. m. Y - H:i", $node->changed).'" />');
 			drupal_set_html_head('  <meta name="creator" content="'.$node->name.'" />');
 			break;
 
