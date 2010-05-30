@@ -113,7 +113,7 @@ function ludwig_tabs_block(){
  * @param string $op
  * @param int $arg
  */
-function ludwig_nodeapi($node, $op, $arg = 0){
+function ludwig_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
 	switch ($op) {
 
 		case "view":			
@@ -131,16 +131,18 @@ function ludwig_nodeapi($node, $op, $arg = 0){
 				$node->content["body"]["#value"] = substr(nl2br(strip_tags($node->body, "<br><img>")), 0, variable_get('teaser_length', 600));
 				return $node;
 			}
-			if($node->path !=""){
+			if($node->path !="" and !$a3){
 				drupal_set_html_head('  <meta name="path" content="/'.$node->path.'" />');
 			}
-			drupal_set_html_head('  <meta name="node-id" content="'.$node->nid.'" />');
-			drupal_set_html_head('  <meta name="node-type" content="'.$node->type.'" />');
-			drupal_set_html_head('  <meta name="created-timestamp" content="'.$node->created.'" />');
-			drupal_set_html_head('  <meta name="created-string" content="'.date("d. m. Y - H:i", $node->created).'" />');
-			drupal_set_html_head('  <meta name="changed-timestamp" content="'.$node->changed.'" />');
-			drupal_set_html_head('  <meta name="changed-string" content="'.date("d. m. Y - H:i", $node->changed).'" />');
-			drupal_set_html_head('  <meta name="creator" content="'.$node->name.'" />');
+			if(!$a3){
+				drupal_set_html_head('  <meta name="node-id" content="'.$node->nid.'" />');
+				drupal_set_html_head('  <meta name="node-type" content="'.$node->type.'" />');
+				drupal_set_html_head('  <meta name="created-timestamp" content="'.$node->created.'" />');
+				drupal_set_html_head('  <meta name="created-string" content="'.date("d. m. Y - H:i", $node->created).'" />');
+				drupal_set_html_head('  <meta name="changed-timestamp" content="'.$node->changed.'" />');
+				drupal_set_html_head('  <meta name="changed-string" content="'.date("d. m. Y - H:i", $node->changed).'" />');
+				drupal_set_html_head('  <meta name="creator" content="'.$node->name.'" />');
+			}
 			break;
 
 		case "rss item":
