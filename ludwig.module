@@ -17,7 +17,7 @@ function ludwig_extended_head(){
 	drupal_set_html_head('  <!-- Get rid of those f*ckin Bots -->');
 	drupal_set_html_head('  <meta name="robots" content="noindex, nofollow" />');
 	drupal_set_html_head('  <meta name="googlebot" content="noindex, nofollow" />');
-	drupal_set_html_head('  <meta name="robots" content="noimageindex" />');
+	drupal_set_html_head('  <meta name="robots" content="noimageindex" />');	
 	drupal_set_html_head('  <meta name="description" content="'.variable_get("site_name", "Sites Name").' | '.variable_get("site_slogan", "Slogan").'" />');
 	if(arg(0)=="node" and arg(1)==""){
 		drupal_set_html_head('  <meta name="keywords" content="'.variable_get("site_mission", "Sites Mission").'" />');
@@ -41,7 +41,6 @@ function ludwig_block($op = 'list', $delta = 0){
 		if(module_exists("archive")){
 			$blocks[1]['info'] = t('Ludwig: Date');
 		}
-		$blocks[2]['info'] = t('Ludwig: Ex Machina');
 		return $blocks;
 	}
 	else if ($op == 'view') {
@@ -70,31 +69,7 @@ function ludwig_block($op = 'list', $delta = 0){
 				$block['subject'] = t('Date');
 				$block['content'] .= $output;
 				break;
-			case 2:
-				$file = fopen("http://www.google.com/reader/public/atom/user/10020190705343921498/state/com.google/broadcast", "r");
-				while($line = fgets($file)){
-					$string .= $line;
-				}
-				$xml = simplexml_load_string($string);
-				$output = "<table>";
-				foreach ($xml->entry as $entry){
-					$output .= '<tr><td class="first-row" style="">';
-					$output .= substr(strtolower($entry->source->title), 0,25);
-					if(strlen($entry->source->title)>25){
-						$output .= " …";
-					}
-					$output .= '</td><td class="second-row">';
-					$output .= '<a href="'.$entry->link["href"].'">'.substr(strtolower($entry->title),0,58);
-					if(strlen($entry->title)>58){
-						$output .= " …";
-					}
-					$output .= "</a>";
-					$output .= '</td></tr>';
-				}
-				$output .= "</table>";
-				$block['subject'] = t('ex machina');
-				$block['content'] .= $output;
-				break;
+			
 		}
 		return $block;
 	}
@@ -142,10 +117,22 @@ function ludwig_nodeapi($node, $op, $arg = 0){
 	switch ($op) {
 
 		case "view":			
-			//dprint_r($node);
+			if(isset($node->teaserimage) or isset($node->field_teaserimage[0]["value"]) or isset($node->field_rss_teaserimage[0]["value"])){
+				drupal_set_html_head('  <meta name="teaserimage" content="'.str_replace("http://anmutunddemut.de", "", $node->field_teaserimage[0]["value"]).'" />');
+			  if(arg(0)=="rss.xml" and isset($node->field_rss_teaserimage[0]["value"])){
+			    $node->content["rss-teaserimage"]["#value"] = "<p class='teaserimage'><img src='".$node->field_rss_teaserimage[0]["value"]."' /></p>";
+					$node->content["rss-teaserimage"]["#weight"] = -100;
+			  }elseif(arg(0)=="rss.xml" and  isset($node->field_teaserimage[0]["value"])){
+			    $node->content["teaserimage"]["#value"] = "<p class='teaserimage'><img src='".$node->field_teaserimage[0]["value"]."' /></p>";
+				  $node->content["teaserimage"]["#weight"] = -100;
+			  }
+			}
 			if($node->content["body"]["#value"] == ""){
 				$node->content["body"]["#value"] = substr(nl2br(strip_tags($node->body, "<br><img>")), 0, variable_get('teaser_length', 600));
 				return $node;
+			}
+			if($node->path !=""){
+				drupal_set_html_head('  <meta name="path" content="'.$node->path.'" />');
 			}
 			break;
 
